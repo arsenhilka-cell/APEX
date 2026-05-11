@@ -60,6 +60,187 @@ body{padding-bottom:0}
 .si{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:18px;background:#1a2230;border:1px solid rgba(57,255,110,0.3);color:#39ff6e;font-size:11px;padding:6px 12px;border-radius:8px;opacity:0;transition:opacity 0.3s;z-index:200}
 .si.on{opacity:1}
 </style>
+
+<style>
+/* ── TOP TABS ── */
+.top-tabs {
+  display: flex;
+  gap: 0;
+  background: #0d1219;
+  border-bottom: 1px solid rgba(57,255,110,0.1);
+  padding: 0 20px;
+}
+.top-tab {
+  padding: 11px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(232,234,237,0.38);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, sans-serif;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.top-tab.active {
+  color: #39ff6e;
+  border-bottom-color: #39ff6e;
+}
+
+/* ── MEET ── */
+#panel-meet {
+  display: none;
+  padding: 20px 16px;
+}
+#panel-meet.active { display: block; }
+#panel-planner { display: block; }
+#panel-planner.hidden { display: none; }
+
+.meet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .meet-grid { grid-template-columns: 1fr; }
+}
+
+.meet-col {
+  background: #131920;
+  border: 1px solid rgba(57,255,110,0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.meet-col-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(57,255,110,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meet-col-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(232,234,237,0.65);
+}
+
+.meet-col-title.questions { color: #4da6ff; }
+.meet-col-title.problems  { color: #ff4d4d; }
+.meet-col-title.plans     { color: #39ff6e; }
+
+.meet-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(232,234,237,0.3);
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+
+.meet-items {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 120px;
+}
+
+.meet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #1a2230;
+  border-radius: 8px;
+  border: 1px solid rgba(57,255,110,0.06);
+  transition: border-color .15s;
+  group: true;
+}
+.meet-item:hover { border-color: rgba(57,255,110,0.2); }
+
+.meet-cb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(57,255,110,0.3);
+  background: #131920;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+  position: relative;
+  transition: background .15s;
+}
+.meet-cb:checked {
+  background: #39ff6e;
+  border-color: #39ff6e;
+}
+.meet-cb:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 5px; height: 9px;
+  border: 2px solid #000;
+  border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
+
+.meet-item-text {
+  flex: 1;
+  font-size: 13px;
+  color: #e8eaed;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.meet-item-text.done {
+  text-decoration: line-through;
+  color: rgba(232,234,237,0.35);
+}
+
+.meet-del {
+  background: none;
+  border: none;
+  color: rgba(232,234,237,0.25);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color .15s;
+}
+.meet-del:hover { color: #ff4d4d; }
+
+.meet-add-wrap {
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(57,255,110,0.06);
+}
+
+.meet-add-input {
+  width: 100%;
+  background: #0d1219;
+  border: 1px solid rgba(57,255,110,0.12);
+  border-radius: 7px;
+  color: #e8eaed;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  transition: border-color .15s;
+}
+.meet-add-input:focus {
+  outline: none;
+  border-color: rgba(57,255,110,0.35);
+}
+.meet-add-input::placeholder { color: rgba(232,234,237,0.25); }
+</style>
 </head>
 <body>
 
@@ -76,6 +257,51 @@ body{padding-bottom:0}
   </div>
 </div>
 
+
+<div class="top-tabs">
+  <button class="top-tab active" onclick="switchTopTab('planner')">Planner</button>
+  <button class="top-tab" onclick="switchTopTab('meet')">Meet</button>
+</div>
+
+<div id="panel-meet">
+  <div class="meet-grid">
+    <!-- Вопросы -->
+    <div class="meet-col" id="col-questions">
+      <div class="meet-col-header">
+        <span class="meet-col-title questions">❓ Вопросы</span>
+        <span class="meet-count" id="cnt-questions">0</span>
+      </div>
+      <div class="meet-items" id="items-questions"></div>
+      <div class="meet-add-wrap">
+        <input class="meet-add-input" id="inp-questions" placeholder="+ Добавить вопрос..." onkeydown="if(event.key==='Enter')meetAdd('questions')">
+      </div>
+    </div>
+    <!-- Проблемы -->
+    <div class="meet-col" id="col-problems">
+      <div class="meet-col-header">
+        <span class="meet-col-title problems">⚠️ Проблемы</span>
+        <span class="meet-count" id="cnt-problems">0</span>
+      </div>
+      <div class="meet-items" id="items-problems"></div>
+      <div class="meet-add-wrap">
+        <input class="meet-add-input" id="inp-problems" placeholder="+ Добавить проблему..." onkeydown="if(event.key==='Enter')meetAdd('problems')">
+      </div>
+    </div>
+    <!-- Планы -->
+    <div class="meet-col" id="col-plans">
+      <div class="meet-col-header">
+        <span class="meet-col-title plans">📋 Планы</span>
+        <span class="meet-count" id="cnt-plans">0</span>
+      </div>
+      <div class="meet-items" id="items-plans"></div>
+      <div class="meet-add-wrap">
+        <input class="meet-add-input" id="inp-plans" placeholder="+ Добавить план..." onkeydown="if(event.key==='Enter')meetAdd('plans')">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-planner">
 <div class="columns">
   <div class="col">
     <div class="col-header">
@@ -232,6 +458,106 @@ async function init(){
 
 clock();setInterval(clock,30000);
 init();
+
+
+// ── MEET ──
+const meetState = { questions: [], problems: [], plans: [] };
+let meetSaveTimer = null;
+
+async function meetLoad() {
+  try {
+    const snap = await getDoc(doc(db, 'planner', 'meet-data'));
+    if (snap.exists()) {
+      const d = snap.data();
+      meetState.questions = d.questions || [];
+      meetState.problems  = d.problems  || [];
+      meetState.plans     = d.plans     || [];
+    }
+  } catch(e) { console.warn('meet load err', e); }
+  meetRenderAll();
+}
+
+async function meetSave() {
+  try {
+    await setDoc(doc(db, 'planner', 'meet-data'), {
+      questions: meetState.questions,
+      problems:  meetState.problems,
+      plans:     meetState.plans
+    });
+    const si=document.getElementById('si'); if(si){si.classList.add('on');setTimeout(()=>si.classList.remove('on'),2000);}
+  } catch(e) { console.warn('meet save err', e); }
+}
+
+function meetScheduleSave() {
+  if (meetSaveTimer) clearTimeout(meetSaveTimer);
+  meetSaveTimer = setTimeout(meetSave, 800);
+}
+
+function meetRenderAll() {
+  ['questions','problems','plans'].forEach(meetRender);
+}
+
+function meetRender(col) {
+  const list = meetState[col];
+  const el = document.getElementById('items-' + col);
+  const cnt = document.getElementById('cnt-' + col);
+  if (!el) return;
+  cnt.textContent = list.length;
+  el.innerHTML = '';
+  list.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'meet-item';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'meet-cb';
+    cb.checked = !!item.done;
+    cb.addEventListener('change', () => {
+      item.done = cb.checked;
+      txt.className = 'meet-item-text' + (item.done ? ' done' : '');
+      meetScheduleSave();
+    });
+
+    const txt = document.createElement('span');
+    txt.className = 'meet-item-text' + (item.done ? ' done' : '');
+    txt.textContent = item.text;
+
+    const del = document.createElement('button');
+    del.className = 'meet-del';
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      meetState[col].splice(i, 1);
+      meetRender(col);
+      meetScheduleSave();
+    });
+
+    div.appendChild(cb);
+    div.appendChild(txt);
+    div.appendChild(del);
+    el.appendChild(div);
+  });
+}
+
+window.meetAdd = function(col) {
+  const inp = document.getElementById('inp-' + col);
+  const val = inp.value.trim();
+  if (!val) return;
+  meetState[col].push({ text: val, done: false });
+  inp.value = '';
+  meetRender(col);
+  meetScheduleSave();
+};
+
+window.switchTopTab = function(tab) {
+  document.querySelectorAll('.top-tab').forEach((b,i) =>
+    b.classList.toggle('active', (i===0 && tab==='planner') || (i===1 && tab==='meet'))
+  );
+  document.getElementById('panel-planner').classList.toggle('hidden', tab !== 'planner');
+  document.getElementById('panel-meet').classList.toggle('active', tab === 'meet');
+};
+
+meetLoad();
 </script>
+</div>
 </body>
 </html>
