@@ -337,6 +337,125 @@ tbody td { padding: 10px 8px; vertical-align: middle; }
   color: var(--text);
   min-width: 320px;
 }
+
+/* ── A-TOKEN ── */
+.atoken-layout {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .atoken-layout { grid-template-columns: 1fr; }
+}
+.atoken-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.atoken-col-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.atoken-col-title {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background .15s;
+}
+.atoken-col-title:hover { background: var(--surface2); }
+.atoken-col-title:focus { outline: none; background: var(--surface2); border: 1px solid var(--border-hover); }
+.atoken-col-count {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border-radius: 10px; padding: 2px 8px;
+  flex-shrink: 0;
+}
+.atoken-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.atoken-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.atoken-row:last-child { border-bottom: none; }
+.atoken-row:hover { background: rgba(57,255,110,0.02); }
+.atoken-name-cell {
+  width: 33%;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 0;
+}
+.atoken-token-cell {
+  flex: 1;
+  padding: 0;
+}
+.atoken-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  padding: 10px 10px;
+  transition: background .15s;
+}
+.atoken-input.token-inp {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+  color: var(--green);
+}
+.atoken-input:focus { outline: none; background: var(--surface2); }
+.atoken-input::placeholder { color: var(--text-muted); }
+.atoken-del-cell {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.atoken-del {
+  background: none; border: none;
+  color: var(--text-muted); font-size: 16px;
+  cursor: pointer; padding: 4px;
+  transition: color .15s; line-height: 1;
+}
+.atoken-del:hover { color: var(--red); }
+.atoken-add-btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  margin: 10px 12px 12px;
+  padding: 8px;
+  background: none;
+  border: 1px dashed rgba(57,255,110,0.2);
+  border-radius: 7px;
+  color: var(--green);
+  font-family: -apple-system, sans-serif;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+.atoken-add-btn:hover { background: rgba(57,255,110,0.04); border-color: rgba(57,255,110,0.4); }
 </style>
 </head>
 <body>
@@ -353,6 +472,7 @@ tbody td { padding: 10px 8px; vertical-align: middle; }
   <button class="main-tab active" onclick="switchMain('accounts')">Аккаунты</button>
   <button class="main-tab" onclick="switchMain('domains')">Домены</button>
   <button class="main-tab" onclick="switchMain('proxies')">Прокси</button>
+  <button class="main-tab" onclick="switchMain('atoken')">A-Token</button>
 </div>
 
 <!-- ACCOUNTS -->
@@ -528,6 +648,12 @@ tbody td { padding: 10px 8px; vertical-align: middle; }
   </div>
 </div>
 
+
+<!-- A-TOKEN -->
+<div class="section-panel" id="panel-atoken">
+  <div class="atoken-layout" id="atoken-layout"></div>
+</div>
+
 <div id="save-indicator">✓ Сохранено</div>
 
 <script type="module">
@@ -614,7 +740,7 @@ function renderAll() {
 // TABS
 window.switchMain = function(tab) {
   document.querySelectorAll('.main-tab').forEach((b,i)=>
-    b.classList.toggle('active',['accounts','domains','proxies'][i]===tab));
+    b.classList.toggle('active',['accounts','domains','proxies','atoken'][i]===tab));
   document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+tab).classList.add('active');
 };
@@ -1018,6 +1144,142 @@ window.confirmProxyParse=function(){
 });
 
 await loadAll();
+
+
+// ── A-TOKEN ──
+const atokenState = {
+  cols: [
+    { title: 'Колонка 1', rows: [] },
+    { title: 'Колонка 2', rows: [] },
+    { title: 'Колонка 3', rows: [] }
+  ]
+};
+let atokenTimer = null;
+
+async function atokenLoad() {
+  try {
+    const snap = await getDoc(doc(db, 'apex-supply', 'atoken'));
+    if (snap.exists()) {
+      const d = snap.data().data;
+      if (d && d.cols) atokenState.cols = d.cols;
+    }
+  } catch(e) { console.warn('atoken load', e); }
+  atokenRender();
+}
+
+async function atokenSave() {
+  try {
+    await setDoc(doc(db, 'apex-supply', 'atoken'), { data: atokenState });
+    showSaved();
+  } catch(e) { console.warn('atoken save', e); }
+}
+
+function atokenScheduleSave() {
+  if (atokenTimer) clearTimeout(atokenTimer);
+  atokenTimer = setTimeout(atokenSave, 800);
+}
+
+function atokenRender() {
+  const layout = document.getElementById('atoken-layout');
+  layout.innerHTML = '';
+  atokenState.cols.forEach((col, ci) => {
+    const colEl = document.createElement('div');
+    colEl.className = 'atoken-col';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'atoken-col-header';
+
+    const titleInp = document.createElement('input');
+    titleInp.type = 'text';
+    titleInp.className = 'atoken-col-title';
+    titleInp.value = col.title;
+    titleInp.addEventListener('input', () => { col.title = titleInp.value; atokenScheduleSave(); });
+
+    const countBadge = document.createElement('span');
+    countBadge.className = 'atoken-col-count';
+    countBadge.textContent = col.rows.length;
+
+    header.appendChild(titleInp);
+    header.appendChild(countBadge);
+    colEl.appendChild(header);
+
+    // Rows
+    const rowsEl = document.createElement('div');
+    rowsEl.className = 'atoken-rows';
+
+    col.rows.forEach((row, ri) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'atoken-row';
+
+      const nameCell = document.createElement('div');
+      nameCell.className = 'atoken-name-cell';
+      const nameInp = document.createElement('input');
+      nameInp.type = 'text';
+      nameInp.className = 'atoken-input';
+      nameInp.placeholder = 'Название';
+      nameInp.value = row.name || '';
+      nameInp.addEventListener('input', () => { row.name = nameInp.value; atokenScheduleSave(); });
+      nameCell.appendChild(nameInp);
+
+      const tokenCell = document.createElement('div');
+      tokenCell.className = 'atoken-token-cell';
+      const tokenInp = document.createElement('input');
+      tokenInp.type = 'text';
+      tokenInp.className = 'atoken-input token-inp';
+      tokenInp.placeholder = 'A-Token...';
+      tokenInp.value = row.token || '';
+      tokenInp.addEventListener('input', () => { row.token = tokenInp.value; atokenScheduleSave(); });
+      tokenCell.appendChild(tokenInp);
+
+      const delCell = document.createElement('div');
+      delCell.className = 'atoken-del-cell';
+      const delBtn = document.createElement('button');
+      delBtn.className = 'atoken-del';
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', () => {
+        col.rows.splice(ri, 1);
+        atokenRender();
+        atokenScheduleSave();
+      });
+      delCell.appendChild(delBtn);
+
+      rowEl.appendChild(nameCell);
+      rowEl.appendChild(tokenCell);
+      rowEl.appendChild(delCell);
+      rowsEl.appendChild(rowEl);
+    });
+
+    colEl.appendChild(rowsEl);
+
+    // Add button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'atoken-add-btn';
+    addBtn.textContent = '+ Добавить';
+    addBtn.addEventListener('click', () => {
+      col.rows.push({ name: '', token: '' });
+      atokenRender();
+      atokenScheduleSave();
+      // Focus name input of last row
+      const rows = colEl.querySelectorAll('.atoken-row');
+      if (rows.length) rows[rows.length-1].querySelector('.atoken-input').focus();
+    });
+    colEl.appendChild(addBtn);
+
+    layout.appendChild(colEl);
+  });
+}
+
+// Patch switchMain to load atoken
+const _origSwitchMain = window.switchMain;
+window.switchMain = function(tab) {
+  _origSwitchMain(tab);
+  if (tab === 'atoken' && !window._atokenLoaded) {
+    window._atokenLoaded = true;
+    atokenLoad();
+  }
+};
+
 </script>
 </body>
 </html>
